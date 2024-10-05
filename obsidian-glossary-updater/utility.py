@@ -26,7 +26,7 @@ def format_data_for_openai(diffs, index_content, commit_messages):
         f"{commit_messages}"
         "Here is the current Index.md file content:\n"
         f"{index_content}\n"
-        "Consider the code changes from the Pull Request (including changes in docstrings and other metadata), and the commit messages. Determine if the Index.md glossary needs to be updated. If so, edit the Index.md, ensuring to maintain its existing style and clarity.\n"
+        "Consider the code changes from the Pull Request (including file names changes), and the commit messages. Determine if the Index.md glossary needs to be updated. If so, edit the Index.md, ensuring to maintain its existing style and clarity. if no update is needed just return 'false'\n"
         "Updated Index.md:\n"
     )
 
@@ -53,6 +53,8 @@ def call_openai(prompt):
         print(f"Error making OpenAI API call: {e}")
 
 def update_index_and_create_pr(repo, updated_index, index_sha):
+    if updated_index == "false"
+        return
     """
     Submit Updated Index content as a PR in a new branch
     """
@@ -79,5 +81,3 @@ def update_index_and_create_pr(repo, updated_index, index_sha):
     pull_request = repo.create_pull(
         title=pr_title, body=br_body, head=new_branch_name, base="master"
     )
-
-    return pull_request

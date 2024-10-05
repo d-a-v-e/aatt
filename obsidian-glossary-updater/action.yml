@@ -39,7 +39,7 @@ runs:
     - name: Run Index Update Script
       env:
         OPENAI_API_KEY: ${{ inputs.OPENAI_API_KEY }}
-        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.MY_GITHUB_TOKEN }}
         REPO_PATH: ${{ github.repository }}
         PR_NUMBER: ${{ env.pull_request_number }}
         COMMIT_SHA: ${{ env.commit_sha }}
