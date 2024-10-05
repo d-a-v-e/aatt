@@ -1,5 +1,5 @@
 name: "Auto-Index Obsidian Updater"
-description: "A GitHub Action to automatically update Obsidian based on new files"
+description: "A GitHub Action to automatically update Obsidian based on new files."
 author: "d-a-v-e"
 inputs:
   OPENAI_API_KEY:
@@ -26,6 +26,7 @@ runs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+      shell: bash  # Shell specified for running Python commands
 
     # Extract PR Number and Commit SHA from the GitHub event context
     - name: Get PR Info
@@ -35,6 +36,7 @@ runs:
         commit_sha=$(jq -r ".pull_request.merge_commit_sha" "$GITHUB_EVENT_PATH")
         echo "pull_request_number=$pr_num" >> $GITHUB_ENV
         echo "commit_sha=$commit_sha" >> $GITHUB_ENV
+      shell: bash  # Shell specified for running shell commands
 
     - name: Run Index Update Script
       env:
@@ -44,9 +46,10 @@ runs:
         PR_NUMBER: ${{ env.pull_request_number }}
         COMMIT_SHA: ${{ env.commit_sha }}
       run: python main.py
+      shell: bash  # Shell specified for running the Python script
 
     # Additional step to enable debugging, helps in troubleshooting
     - name: Enable Debug Logging
       run: |
         echo "ACTIONS_STEP_DEBUG=true" >> $GITHUB_ENV
-
+      shell: bash  # Shell specified for running shell commands
