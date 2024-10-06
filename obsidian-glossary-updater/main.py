@@ -13,32 +13,36 @@ def main():
     # Get the repo object
     repo = g.get_repo(repo_path)
 
-    # Fetch Index.md content
-    index_content = repo.get_contents("Index.md")
+    # Fetch Glossary.md content
+    index_content = repo.get_contents("Glossary.md")
 
-    # print(index_content)
     # Fetch pull request by number
     pull_request = repo.get_pull(pull_request_number)
 
-    # Get the diffs of the pull request
-    pull_request_diffs = [
-        {
-            "filename": file.filename,
-            "patch": file.patch
-        }
-        for file in pull_request.get_files()
+    # Get the list of new markdown files added in the PR
+    ignore_files = {'glossary.md', 'index.md'}
+
+    new_markdown_files = [
+        file.filename for file in pull_request.get_files()
+        if file.status == 'added' and
+           file.filename.endswith('.md') and
+           file.filename.lower() not in ignore_files
     ]
+
+    if not new_markdown_files:
+        print("No new markdown files to add to the glossary.")
+        return
 
     # Get the commit messages associated with the pull request
     commit_messages = [commit.commit.message for commit in pull_request.get_commits()]
 
     # Format data for OpenAI prompt
-    prompt = format_data_for_openai(pull_request_diffs, index_content, commit_messages)
+    prompt = format_data_for_openai(new_markdown_files, index_content)
 
-    # Call OpenAI to generate the updated Index.md content
+    # Call OpenAI to generate the updated Glossary.md content
     updated_index = call_openai(prompt)
 
-    # Create PR for Updated PR
+    # Create PR for Updated Glossary.md
     update_index_and_create_pr(repo, updated_index, index_content.sha)
 
 if __name__ == '__main__':
