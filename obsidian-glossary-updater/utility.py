@@ -53,7 +53,7 @@ def call_openai(prompt):
         print(f"Error making OpenAI API call: {e}")
 
 def update_index_and_create_pr(repo, updated_index, index_sha):
-    if updated_index == "false"
+    if updated_index == "false":
         return
     """
     Submit Updated Index content as a PR in a new branch
@@ -63,7 +63,7 @@ def update_index_and_create_pr(repo, updated_index, index_sha):
     master_branch = repo.get_branch("master")
     new_branch_name = f"update-index-{index_sha[:10]}"
     new_branch = repo.create_git_ref(
-        ref=f"refs/heads/{new_branch_name}", sha=main_branch.commit.sha
+        ref=f"refs/heads/{new_branch_name}", sha=master_branch.commit.sha
     )
 
     # Update the README file

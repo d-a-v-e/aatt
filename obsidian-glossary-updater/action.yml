@@ -5,8 +5,14 @@ inputs:
   OPENAI_API_KEY:
     description: "OpenAI API key for generating content."
     required: true
-  MY_GITHUB_TOKEN:
+  GH_TOKEN:
     description: "GitHub token for accessing the repository."
+    required: true
+  REPO_PATH:
+    description: "The repository path in 'owner/repo' format."
+    required: true
+  PR_NUMBER:
+    description: "The pull request number."
     required: true
 outputs:
   success:
@@ -14,6 +20,11 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Enable Debug Logging
+      run: |
+        echo "ACTIONS_STEP_DEBUG=true" >> $GITHUB_ENV
+      shell: bash
+
     - name: Checkout Repository
       uses: actions/checkout@v4
 
@@ -26,30 +37,13 @@ runs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-      shell: bash  # Shell specified for running Python commands
-
-    # Extract PR Number and Commit SHA from the GitHub event context
-    - name: Get PR Info
-      id: pr_info
-      run: |
-        pr_num=$(jq -r ".pull_request.number" "$GITHUB_EVENT_PATH")
-        commit_sha=$(jq -r ".pull_request.merge_commit_sha" "$GITHUB_EVENT_PATH")
-        echo "pull_request_number=$pr_num" >> $GITHUB_ENV
-        echo "commit_sha=$commit_sha" >> $GITHUB_ENV
-      shell: bash  # Shell specified for running shell commands
+      shell: bash
 
     - name: Run Index Update Script
       env:
         OPENAI_API_KEY: ${{ inputs.OPENAI_API_KEY }}
-        GITHUB_TOKEN: ${{ inputs.MY_GITHUB_TOKEN }}
-        REPO_PATH: ${{ github.repository }}
-        PR_NUMBER: ${{ env.pull_request_number }}
-        COMMIT_SHA: ${{ env.commit_sha }}
+        GH_TOKEN: ${{ inputs.GH_TOKEN }}
+        REPO_PATH: ${{ inputs.REPO_PATH }}
+        PR_NUMBER: ${{ inputs.PR_NUMBER }}
       run: python main.py
-      shell: bash  # Shell specified for running the Python script
-
-    # Additional step to enable debugging, helps in troubleshooting
-    - name: Enable Debug Logging
-      run: |
-        echo "ACTIONS_STEP_DEBUG=true" >> $GITHUB_ENV
-      shell: bash  # Shell specified for running shell commands
+      shell: bash
