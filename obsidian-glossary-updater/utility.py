@@ -1,61 +1,78 @@
 import os
 import base64
-from langchain_openai import ChatOpenAI
-from langchain_core.output_parsers import StrOutputParser
+from langchain.chat_models import ChatOpenAI
+from langchain.schema import HumanMessage, SystemMessage
 
-def format_data_for_openai(new_markdown_files, index_content):
-    # Decode the Glossary.md content
-    index_content_decoded = base64.b64decode(index_content.content).decode("utf-8")
+def extract_added_lines(patch):
+    added_lines = []
+    for line in patch.split('\n'):
+        if line.startswith('+') and not line.startswith('+++'):
+            added_lines.append(line[1:])
+    return added_lines
 
-    # Construct the prompt with clear instructions
+def format_extraction_prompt_generic(added_text):
     prompt = (
-        "You are an assistant that helps update the Glossary.md file in an Obsidian vault.\n"
-        "The Glossary.md file serves as a glossary and table of contents for the vault.\n"
+        "You are an assistant that extracts important terms from the provided text.\n\n"
         "Please perform the following tasks:\n"
-        "1. Review the list of new markdown files added to the vault:\n"
-        f"{', '.join(new_markdown_files)}\n"
-        "2. Update the Glossary.md file by adding links to these new markdown files, preserving the existing style and formatting.\n"
-        "3. Any and all glossary links should have a short concise definition underneath the link to their note.\n"
-        "4. Do not modify other sections of the Glossary.md file unless you are adding a short concise definition under an existing link.\n"
-        "5. Provide only the updated Glossary.md content without any additional explanations.\n\n"
-        "Current Glossary.md content:\n"
-        f"{index_content_decoded}\n\n"
-        "Please provide the updated Glossary.md content below:\n"
+        "1. Review the following text:\n"
+        f"{added_text}\n"
+        "2. Identify and list any significant words, terms, acronyms, or phrases such as objects, products, processes, nouns, proper nouns, and acronyms.\n"
+        "3. Provide the list of terms without any definitions or additional explanations.\n"
+        "4. If no relevant terms are found, respond with 'false'.\n\n"
+        "Please provide the list of terms below:\n"
     )
-
     return prompt
 
-def call_openai(prompt):
-    client = ChatOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+def format_glossary_prompt(extracted_terms, glossary_content, vault_purpose):
+    # Decode the Glossary.md content
+    glossary_content_decoded = base64.b64decode(glossary_content.content).decode("utf-8")
+
+    prompt = (
+        "You are an assistant that helps update the Glossary.md file in an Obsidian vault.\n"
+        f"The purpose of this Obsidian vault is: {vault_purpose}\n"
+        "The Glossary.md file serves as a glossary and table of contents for the vault.\n"
+        "Please perform the following tasks:\n"
+        "1. Using the following text or list of terms:\n"
+        f"{extracted_terms}\n"
+        "2. Identify any words, terms, acronyms, or phrases that are relevant to the vault's purpose and should be added to the Glossary.\n"
+        "3. Update the Glossary.md file by adding entries for these terms, preserving the existing style and formatting.\n"
+        "4. Each new entry must include a relevant and concise definition underneath it.\n"
+        "5. Do not modify other sections of the Glossary.md file unless you are adding a definition under an existing entry.\n"
+        "6. If no updates are necessary, respond with 'false'.\n"
+        "7. Provide only the updated Glossary.md content without any additional explanations.\n\n"
+        "Current Glossary.md content:\n"
+        f"{glossary_content_decoded}\n\n"
+        "Please provide the updated Glossary.md content below:\n"
+    )
+    return prompt
+
+def call_openai(prompt, model_name):
+    client = ChatOpenAI(api_key=os.getenv("OPENAI_API_KEY"), model_name=model_name)
     try:
         messages = [
-            {
-                "role": "system",
-                "content": "You are an AI assistant that updates the Glossary.md file in an Obsidian vault based on recent changes.",
-            },
-            {"role": "user", "content": prompt},
+            SystemMessage(
+                content="You are an AI assistant that processes user requests."
+            ),
+            HumanMessage(content=prompt),
         ]
 
         # Call OpenAI
-        response = client.invoke(input=messages)
-        parser = StrOutputParser()
-        content = parser.invoke(input=response)
+        response = client(messages)
+        content = response.content
 
         return content.strip()
     except Exception as e:
         print(f"Error making OpenAI API call: {e}")
         return "false"
 
-def update_index_and_create_pr(repo, updated_index, index_sha):
-    if updated_index == "false":
-        return
+def update_glossary_and_create_pr(repo, updated_glossary, glossary_sha, pull_request_number):
     """
-    Submit Updated Index content as a PR in a new branch
+    Submit Updated Glossary content as a PR in a new branch
     """
 
-    commit_message = "Proposed Glossary.md update based on recent code changes"
+    commit_message = "Proposed Glossary.md update based on recent changes"
     master_branch = repo.get_branch("master")
-    new_branch_name = f"update-index-{index_sha[:10]}"
+    new_branch_name = f"update-glossary-pr{pull_request_number}"
     new_branch = repo.create_git_ref(
         ref=f"refs/heads/{new_branch_name}", sha=master_branch.commit.sha
     )
@@ -64,14 +81,14 @@ def update_index_and_create_pr(repo, updated_index, index_sha):
     repo.update_file(
         path="Glossary.md",
         message=commit_message,
-        content=updated_index,
-        sha=index_sha,
+        content=updated_glossary,
+        sha=glossary_sha,
         branch=new_branch_name,
     )
 
     # Create a PR
     pr_title = "Update Glossary.md based on recent changes"
-    br_body = "This PR proposes an update to the Glossary.md based on recent additions. Please review and merge if appropriate."
+    pr_body = "This PR proposes an update to the Glossary.md based on recent additions. Please review and merge if appropriate."
     pull_request = repo.create_pull(
-        title=pr_title, body=br_body, head=new_branch_name, base="master"
+        title=pr_title, body=pr_body, head=new_branch_name, base="master"
     )
