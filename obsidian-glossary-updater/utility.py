@@ -39,9 +39,13 @@ def format_glossary_prompt(extracted_terms, glossary_content, vault_purpose):
         "4. Each new entry must include a relevant and concise definition underneath it.\n"
         "5. Do not modify other sections of the Glossary.md file unless you are adding a definition under an existing entry.\n"
         "6. If no updates are necessary, respond with 'false'.\n"
-        "7. Provide only the updated Glossary.md content without any additional explanations.\n\n"
+        "7. Provide only the updated Glossary.md content in plain text format, without wrapping it in code blocks or adding any additional explanations.\n"
+        "\n"
+        "**Note**: Do not include any markdown code block fences (e.g., ```markdown) at the beginning or end of your response.\n"
+        "\n"
         "Current Glossary.md content:\n"
-        f"{glossary_content_decoded}\n\n"
+        f"{glossary_content_decoded}\n"
+        "\n"
         "Please provide the updated Glossary.md content below:\n"
     )
     return prompt
