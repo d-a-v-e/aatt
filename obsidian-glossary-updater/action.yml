@@ -26,3 +26,4 @@ runs:
     GH_TOKEN: ${{ inputs.GH_TOKEN }}
     REPO_PATH: ${{ inputs.REPO_PATH }}
     PR_NUMBER: ${{ inputs.PR_NUMBER }}
+    VAULT_PURPOSE: ${{ inputs.VAULT_PURPOSE }}
