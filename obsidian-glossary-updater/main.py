@@ -2,6 +2,7 @@ import os
 from github import Github
 from utility import *
 import base64
+from github.GithubException import UnknownObjectException
 
 def main():
     # Initialize GitHub API with token
@@ -14,8 +15,15 @@ def main():
     # Get the repo object
     repo = g.get_repo(repo_path)
 
-    # Fetch Glossary.md content
-    glossary_content = repo.get_contents("Glossary.md")
+    # Fetch Glossary.md content or initialize if it doesn't exist
+    try:
+        glossary_file = repo.get_contents("Glossary.md")
+        glossary_content = base64.b64decode(glossary_file.content).decode("utf-8")
+        glossary_sha = glossary_file.sha
+    except UnknownObjectException:
+        # Glossary.md does not exist
+        glossary_content = ""  # Empty content
+        glossary_sha = None    # No SHA since the file doesn't exist yet
 
     # Fetch pull request by number
     pull_request = repo.get_pull(pull_request_number)
@@ -69,7 +77,7 @@ def main():
         return
 
     # Create PR for Updated Glossary.md
-    update_glossary_and_create_pr(repo, updated_glossary, glossary_content.sha, pull_request_number)
+    update_glossary_and_create_pr(repo, updated_glossary, glossary_sha, pull_request_number)
 
 if __name__ == '__main__':
     main()
