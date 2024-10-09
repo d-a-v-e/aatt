@@ -9,6 +9,19 @@ def extract_added_lines(patch):
             added_lines.append(line[1:])
     return added_lines
 
+def format_extraction_prompt_generic(added_text):
+    prompt = (
+        "You are an assistant that extracts important terms from the provided text.\n\n"
+        "Please perform the following tasks:\n"
+        "1. Review the following text:\n"
+        f"{added_text}\n"
+        "2. Identify and list any significant words, terms, acronyms, or phrases such as objects, products, processes, nouns, proper nouns, and acronyms.\n"
+        "3. Provide the list of terms without any definitions or additional explanations.\n"
+        "4. If no relevant terms are found, respond with 'false'.\n\n"
+        "Please provide the list of terms below:\n"
+    )
+    return prompt
+
 def format_glossary_prompt(extracted_terms, glossary_content, vault_purpose):
     # Construct the prompt with clear instructions, incorporating the vault purpose
     prompt = (
