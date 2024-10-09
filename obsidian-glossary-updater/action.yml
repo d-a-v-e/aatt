@@ -15,6 +15,9 @@ inputs:
   PR_NUMBER:
     description: "The pull request number."
     required: true
+  VAULT_PURPOSE:
+    description: "Defines the purpose of the obsidian vault. Best to include but not 100% necessary"
+    required: false
 
 runs:
   using: 'docker'
